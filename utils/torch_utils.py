@@ -9,7 +9,6 @@ import os
 import platform
 import subprocess
 import time
-import warnings
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
@@ -25,9 +24,6 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-
-    # Suppress PyTorch warnings
-warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
 
     
 @contextmanager
@@ -288,9 +284,13 @@ class EarlyStopping:
 
 
 class ModelEMA:
-    """ Updated Exponential Moving Average (EMA) from https://github.com/rwightman/pytorch-image-models
-    Keeps a moving average of everything in the model state_dict (parameters and buffers)
-    For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+    """ Model Exponential Moving Average from https://github.com/rwightman/pytorch-image-models
+    Keep a moving average of everything in the model state_dict (parameters and buffers).
+    This is intended to allow functionality like
+    https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
+    A smoothed version of the weights is necessary for some training schemes to perform well.
+    This class is sensitive where it is initialized in the sequence of model init,
+    GPU assignment and distributed training wrappers.
     """
 
     def __init__(self, model, decay=0.9999, updates=0):
